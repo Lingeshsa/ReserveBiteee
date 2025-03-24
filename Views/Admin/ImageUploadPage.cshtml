@@ -1,0 +1,57 @@
+﻿@{
+    ViewData["Title"] = "Upload Image";
+}
+
+<h2>Upload Image</h2>
+
+<div id="message" class="mt-3"></div>
+
+
+<form id="uploadForm" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" id="dishName" name="name" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea id="dishDescription" name="description" class="form-control" required></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Upload Image</label>
+        <input type="file" id="dishImage" name="file" class="form-control" required />
+    </div>
+
+    <button type="button" id="uploadBtn" class="btn btn-primary">Upload</button>
+</form>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $("#uploadBtn").click(function () {
+            var formData = new FormData();
+            formData.append("name", $("#dishName").val());
+            formData.append("description", $("#dishDescription").val());
+            formData.append("file", $("#dishImage")[0].files[0]);
+
+            $.ajax({
+                type: "POST",
+                url: "/Image/UploadImage",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    $("#message").html('<div class="alert alert-success">' + response.message + '</div>');
+                    location.reload();
+                },
+                error: function (xhr) {
+                    var errorMessage = xhr.responseText ? xhr.responseText : "Upload failed!";
+                    $("#message").html('<div class="alert alert-danger">' + errorMessage + '</div>');
+                }
+            });
+        });
+    });
+</script>

@@ -1,0 +1,120 @@
+﻿@{
+    ViewData["Title"] = "Register";
+}
+
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg p-4">
+                <h2 class="text-center mb-4">Welcome!</h2>
+                <div id="message"></div>
+
+                <form method="post" asp-controller="Account" asp-action="RegisterUser" id="registerForm">
+                    <div class="mb-3">
+                        <label for="UserName" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="UserName" name="UserName" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="Email" name="Email" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="Password" name="Password" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ConfirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" >
+                    </div>
+
+
+                    <div class="text-center mt-3">
+                        <button type="button" id="registerBtn" class="btn btn-primary mt-3">Register</button>
+                        <p class="mt-2">
+                            Do have an account?
+                            <a href="/Account/Login" class="fw-bold text-decoration-none">LogIn</a>
+                        </p>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#registerBtn").click(function (event) {
+            event.preventDefault();
+
+            $("#message").html("");
+            var isValid = true;
+
+            var UserName = $("#UserName").val().trim();
+            var Email = $("#Email").val().trim();
+            var Password = $("#Password").val().trim();
+            var ConfirmPassword = $("#ConfirmPassword").val().trim();
+
+            if (UserName.length < 4) {
+                $("#message").append('<div class="alert alert-danger">Username must be at least 4 characters.</div>');
+                isValid = false;
+            }
+
+            if (Password.length < 6) {
+                $("#message").append('<div class="alert alert-danger">Password must be at least 6 characters.</div>');
+                isValid = false;
+            }
+
+            if (ConfirmPassword !== Password) {
+                $("#message").append('<div class="alert alert-danger">Passwords do not match.</div>');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                return;
+            }
+
+            $("#registerBtn").prop("disabled", true).text("Registering...");
+
+            var user = {
+                UserName: UserName,
+                Email: Email,
+                Password: Password 
+            };
+
+            $.ajax({
+                type: "POST",
+                url: "/Account/RegisterUser",
+                contentType: "application/json",  
+                data: JSON.stringify(user), 
+                success: function (response) {
+                    $("#message").html('<div class="alert alert-success">' + response + '</div>');
+                    $("#registerForm")[0].reset();
+                    $("#registerBtn").prop("disabled", false).text("Register");
+
+                    setTimeout(function () {
+                    location.reload(); 
+                    }, 2000);
+                },
+                error: function (xhr) {
+                    var errorMessage = xhr.responseText ? xhr.responseText : "Registration failed. Try again!";
+                    $("#message").html('<div class="alert alert-danger">' + errorMessage + '</div>');
+                    $("#registerBtn").prop("disabled", false).text("Register");
+                }
+            });
+        });
+    });
+</script>
+
+
+
+
+

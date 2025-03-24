@@ -1,0 +1,152 @@
+﻿@{
+    ViewData["Title"] = "Menu List";
+}
+
+<div class="container mt-5">
+    <h3 class="text-center mb-4">Menu List</h3>
+
+    <button class="btn btn-success mb-3" onclick="window.location.href='/Admin/AddMenu'">
+        Add Menu
+    </button>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>  
+                <th>Menu Name</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="menuList"></tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="editMenuModal" tabindex="-1" aria-labelledby="editMenuModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMenuModalLabel">Edit Menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editMenuId">
+                <div class="mb-3">
+                    <label for="editMenuName" class="form-label">Menu Name</label>
+                    <input type="text" id="editMenuName" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="editMenuAmount" class="form-label">Amount</label>
+                    <input type="number" id="editMenuAmount" class="form-control">
+                </div>
+                <button type="button" class="btn btn-primary" id="updateMenuBtn">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        loadMenus();
+
+        function loadMenus() {
+            $.ajax({
+                type: "GET",
+                url: "/Admin/GetMenus",
+                success: function (menus) {
+                    $("#menuList").empty();
+
+                    if (menus.length > 0) {
+                        $.each(menus, function (index, menu) {
+                            $("#menuList").append(
+                                `<tr>
+                                    <td>${menu.id}</td>
+                                    <td>${menu.menuItem}</td>
+                                    <td>${menu.amount}</td>
+                                    <td>
+                                        <button class="btn btn-warning btn-sm edit-btn" data-id="${menu.id}" data-name="${menu.menuItem}" data-amount="${menu.amount}">Edit</button>
+                                        <button class="btn btn-danger btn-sm delete-btn" data-id="${menu.id}">Delete</button>
+                                    </td>
+                                </tr>`
+                            );
+                        });
+                    } else {
+                        $("#menuList").append('<tr><td colspan="4" class="text-center">No menus available</td></tr>');
+                    }
+                },
+                error: function (xhr) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
+        $(document).on("click", ".edit-btn", function () {
+            var menuId = $(this).data("id");
+            var menuName = $(this).data("name");
+            var menuAmount = $(this).data("amount");
+
+            $("#editMenuId").val(menuId);
+            $("#editMenuName").val(menuName);
+            $("#editMenuAmount").val(menuAmount);
+            $("#editMenuModal").modal("show");
+        });
+
+        $("#updateMenuBtn").click(function () {
+            var menuId = $("#editMenuId").val();
+            var menuName = $("#editMenuName").val().trim();
+            var menuAmount = $("#editMenuAmount").val().trim();
+
+            if (menuName === "" || menuAmount === "") {
+                alert("Menu name and amount cannot be empty.");
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/Admin/UpdateMenu",
+                contentType: "application/json",
+                data: JSON.stringify({ Id: menuId, MenuItem: menuName, Amount: parseFloat(menuAmount) }),
+                success: function (response) {
+                    alert(response.message);
+                    $("#editMenuModal").modal("hide");
+                    loadMenus();
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON?.message || "Error updating menu.");
+                }
+            });
+        });
+
+
+        $(document).on("click", ".delete-btn", function () {
+        var menuId = $(this).data("id");
+        debugger;
+
+        if (!menuId) {
+            alert("Invalid menu ID.");
+            return;
+        }
+
+        if (confirm("Are you sure you want to delete this menu?")) {
+            $.ajax({
+                type: "DELETE",
+                url: "/Admin/DeleteMenu",
+                contentType: "application/json",
+                success: function (response) {
+                    alert(response.message);
+                    loadMenus();
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON?.message || "Error deleting menu.");
+                }
+            });
+        }
+    });
+
+    });
+</script>

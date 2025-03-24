@@ -1,0 +1,183 @@
+﻿@{
+    ViewData["Title"] = "Customer Page";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Choose Your Favorite Dishes</h2>
+        <p class="text-muted">Browse through our menu and order your favorite meals.</p>
+    </div>
+
+    <div class="row" id="menuList">
+    </div>
+
+    <div class="text-center mt-4">
+        <h4 class="fw-bold">Grand Total: ₹<span id="grandTotal" class="text-primary">0.00</span></h4>
+        <button id="confirmOrder" class="btn btn-primary btn-lg mx-2">Confirm Order</button>
+        <button id="payNow" class="btn btn-success btn-lg mx-2">Pay Now</button>
+    </div>
+</div>
+
+<div id="billContainer" class="container mt-5 p-4 rounded shadow-lg bg-light" style="display: none; max-width: 600px;">
+    <h2 class="text-center text-dark">ReserveBite Receipt</h2>
+    <p class="text-center text-muted"><strong>Date:</strong> <span id="billDate"></span></p>
+    <table class="table table-bordered">
+        <thead>
+            <tr class="table-dark">
+                <th>Item</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody id="billDetails"></tbody>
+    </table>
+    <h3 class="text-end">Total: ₹<span id="billGrandTotal" class="text-primary">0.00</span></h3>
+    <p class="text-center text-muted">Thank you for dining with us!</p>
+    <button onclick="printBill()" class="btn btn-dark w-100">Print Receipt</button>
+</div>
+
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="qrModalLabel">Scan QR Code to Pay</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="qrCode" src="~/img/qr-code-7819652_640.jpg" alt="QR Code" class="img-fluid rounded">
+                <p class="mt-3 text-muted">Scan this QR code to complete your payment.</p>
+                <h4 class="mt-3 text-dark">Total: ₹<span id="totalAmount">0.00</span></h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .menu-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .menu-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-card img {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px 10px 0 0;
+        }
+
+    .btn-lg {
+        padding: 10px 30px;
+        font-size: 18px;
+        border-radius: 8px;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        loadMenus();
+
+        function loadMenus() {
+            $.ajax({
+                type: "GET",
+                url: "/Admin/GetMenus",
+                success: function (menus) {
+                    $("#menuList").empty();
+                    if (menus.length > 0) {
+                        $.each(menus, function (index, menu) {
+                            $("#menuList").append(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="menu-card card">
+                                        <img src="data:image/png;base64,${menu.imageBase64}" class="card-img-top" alt="${menu.menuItem}">
+                                        <div class="card-body text-center">
+                                            <h5 class="card-title">${menu.menuItem}</h5>
+                                            <p class="text-muted">Price: ₹${menu.amount.toFixed(2)}</p>
+                                            <div class="d-flex justify-content-center">
+                                                <button class="btn btn-success btn-sm increment-btn mx-1" data-id="${menu.id}">+</button>
+                                                <span class="item-count mx-2" data-id="${menu.id}">0</span>
+                                                <button class="btn btn-danger btn-sm decrement-btn mx-1" data-id="${menu.id}">−</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        $("#menuList").html('<p class="text-center text-danger">No menus available</p>');
+                    }
+                },
+                error: function (xhr) {
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            let billContent = "";
+
+            $(".menu-card").each(function () {
+                let menuId = $(this).find(".increment-btn").data("id");
+                let itemName = $(this).find(".card-title").text();
+                let quantity = parseInt($(`.item-count[data-id="${menuId}"]`).text());
+                let price = parseFloat($(this).find(".text-muted").text().replace("Price: ₹", ""));
+                let total = quantity * price;
+
+                if (quantity > 0) {
+                    billContent += `<tr>
+                                        <td>${itemName}</td>
+                                        <td>${price.toFixed(2)}</td>
+                                        <td>${quantity}</td>
+                                        <td>${total.toFixed(2)}</td>
+                                    </tr>`;
+                    grandTotal += total;
+                }
+            });
+
+            $("#grandTotal").text(grandTotal.toFixed(2));
+            $("#billDetails").html(billContent);
+            $("#billGrandTotal").text(grandTotal.toFixed(2));
+        }
+
+        $(document).on("click", ".increment-btn", function () {
+            let menuId = $(this).data("id");
+            let countElement = $(`.item-count[data-id="${menuId}"]`);
+            let count = parseInt(countElement.text()) + 1;
+            countElement.text(count);
+            updateGrandTotal();
+        });
+
+        $(document).on("click", ".decrement-btn", function () {
+            let menuId = $(this).data("id");
+            let countElement = $(`.item-count[data-id="${menuId}"]`);
+            let count = parseInt(countElement.text());
+            if (count > 0) {
+                count -= 1;
+                countElement.text(count);
+                updateGrandTotal();
+            }
+        });
+
+        $(document).on("click", "#payNow", function () {
+            let total = $("#grandTotal").text();
+            $("#totalAmount").text(total);
+            $("#qrModal").modal("show");
+        });
+    });
+
+    function printBill() {
+        let billContent = document.getElementById("billContainer").innerHTML;
+        let originalContent = document.body.innerHTML;
+        document.body.innerHTML = billContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        location.reload();
+    }
+</script>

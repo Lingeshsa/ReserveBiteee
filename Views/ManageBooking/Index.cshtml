@@ -1,0 +1,70 @@
+﻿@model List<ReservationModel>
+
+<h2>Booking Reservations</h2>
+
+<table class="table table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Date & Time</th>
+            <th>Guests</th>
+            <th>Requests</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var reservation in Model)
+        {
+            <tr>
+                <td>@reservation.Id</td>
+                <td>@reservation.FullName</td>
+                <td>@reservation.Email</td>
+                <td>@reservation.Phone</td>
+                <td>@reservation.ReservationDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@reservation.Guests</td>
+                <td>@reservation.Requests</td>
+                <td>
+                    <select class="form-select status-select" data-id="@reservation.Id">
+                        <option value="Pending" selected="@(reservation.Status == "Pending" ? "selected" : null)">Pending</option>
+                        <option value="Confirmed" selected="@(reservation.Status == "Confirmed" ? "selected" : null)">Confirmed</option>
+                        <option value="Cancelled" selected="@(reservation.Status == "Cancelled" ? "selected" : null)">Cancelled</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-primary btn-sm update-status-btn" data-id="@reservation.Id">Update</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".update-status-btn").click(function () {
+           
+            var reservationId = $(this).data("id");  
+            var newStatus = $(this).closest("tr").find(".status-select").val();
+
+            $.ajax({
+                url: "/ManageBooking/UpdateStatus",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ Id: reservationId, Status: newStatus }),
+                success: function (response) {
+                    alert("Status updated successfully!");
+                    location.reload(); 
+                },
+                error: function (xhr) {
+                    alert("Error updating status: " + xhr.responseText);
+                }
+            });
+        });
+    });
+</script>
+

@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Add Menu";
+}
+
+<div class="container mt-5">
+    <h3 class="text-center mb-4">Add Menu</h3>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg p-4">
+                <div id="message"></div> 
+
+                <div class="mb-3">
+                    <label for="menuName" class="form-label">Menu Name</label>
+                    <input type="text" id="menuName" class="form-control" placeholder="Enter menu name">
+                </div>
+
+                <div class="mb-3">
+                    <label for="menuAmount" class="form-label">Menu Amount</label>
+                    <input type="number" id="menuAmount" class="form-control" placeholder="Enter menu amount">
+                </div>
+
+                <button type="button" id="addMenuBtn" class="btn btn-primary w-100">
+                    Add Menu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#addMenuBtn").click(function (event) {
+            event.preventDefault();
+            $("#message").html("");  
+
+            var menuName = $("#menuName").val().trim();
+            var menuAmount = $("#menuAmount").val().trim();
+
+            if (menuName === "" || menuAmount === "") {
+                $("#message").html('<div class="alert alert-danger">All fields are required!</div>');
+                return;
+            }
+
+            var menuData = {
+                MenuItem: menuName,
+                Amount: parseFloat(menuAmount)
+            };
+
+            $.ajax({
+                type: "POST",
+                url: "/Admin/AddMenu",
+                contentType: "application/json",
+                data: JSON.stringify(menuData),
+                success: function (response) {
+                    $("#message").html('<div class="alert alert-success">' + response.message + '</div>');
+                    $("#menuName").val("");
+                    $("#menuAmount").val("");
+                },
+                error: function (xhr) {
+                    var errorMessage = xhr.responseJSON?.message || "Error adding menu!";
+                    $("#message").html('<div class="alert alert-danger">' + errorMessage + '</div>');
+                }
+            });
+        });
+    });
+</script>

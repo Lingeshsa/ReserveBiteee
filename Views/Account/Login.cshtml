@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card shadow-lg p-4">
+                <h2 class="text-center mb-4">Login</h2>
+
+                <div id="message"></div>
+
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="UserName" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="UserName" name="UserName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="Password" name="Password" required>
+                    </div>
+
+                    <button type="button" id="loginBtn" class="btn btn-primary w-100">Login</button>
+
+                    <div class="text-center mt-3">
+                        <a href="/Account/Register">Don't have an account? Register</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+        $(document).ready(function () {
+        $("#loginBtn").click(function (event) {
+            event.preventDefault();
+            $("#message").html("");
+
+            var user = {
+                UserName: $("#UserName").val().trim(),
+                Password: $("#Password").val().trim()
+            };
+            $.ajax({
+                type: "POST",
+                url: "/Account/FindUser",
+                contentType: "application/json",
+                data: JSON.stringify(user),
+                success: function (response) {
+    if (response.redirectUrl) {
+                window.location.href = response.redirectUrl;  // Redirect immediately
+            }
+
+                  
+                },
+                error: function (xhr) {
+                    var errorMessage = xhr.responseText ? xhr.responseText : "Registration failed. Try again!";
+                    $("#message").html('<div class="alert alert-danger">' + errorMessage + '</div>');
+                    $("#registerBtn").prop("disabled", false).text("Register");
+                }
+            });
+        });
+    });
+
+</script>

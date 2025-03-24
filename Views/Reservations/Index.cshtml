@@ -1,0 +1,194 @@
+﻿@{
+    ViewData["Title"] = "Book a Table";
+}
+
+<div class="booking-container">
+    <div class="overlay"></div>
+    <div class="booking-form">
+        <h2 class="text-center fw-bold mb-3">Reserve Your Table</h2>
+        <p class="text-center text-muted mb-4">Plan your perfect dining experience with us.</p>
+
+        <!-- Error Alert -->
+        <div id="errorAlert" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="reservationForm">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Full Name</label>
+                <input type="text" id="FullName" name="FullName" class="form-control" placeholder="Enter your full name" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Email</label>
+                <input type="email" id="Email" name="Email" class="form-control" placeholder="Enter your email" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Phone Number</label>
+                <input type="tel" id="Phone" name="Phone" class="form-control" placeholder="Enter your phone number" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Date & Time</label>
+                <input type="datetime-local" id="ReservationDateTime" name="ReservationDateTime" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Number of Guests</label>
+                <select id="Guests" name="Guests" class="form-select" required>
+                    <option value="1">1 Person</option>
+                    <option value="2">2 People</option>
+                    <option value="3">3 People</option>
+                    <option value="4">4 People</option>
+                    <option value="5">5+ People</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Special Requests (Optional)</label>
+                <textarea id="Requests" name="Requests" class="form-control" rows="3" placeholder="Any special requests..."></textarea>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <span id="submitText">Book Now</span>
+                    <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">Reservation Confirmed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Your table has been successfully reserved! A confirmation email has been sent.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX Script -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+       $(document).ready(function () {
+        $("#reservationForm").submit(function (event) {
+            event.preventDefault();
+
+            // Show loading spinner
+            $("#loadingSpinner").removeClass("d-none");
+            $("#submitText").text("Processing...");
+
+            debugger
+                    var formData = {
+        FullName: $("#FullName").val(),
+        Email: $("#Email").val(),
+        Phone: $("#Phone").val(),
+        ReservationDateTime: new Date($("#ReservationDateTime").val()).toISOString(), // Convert to UTC
+        Guests: parseInt($("#Guests").val()),
+        Requests: $("#Requests").val()
+    };
+
+
+
+            $.ajax({
+                type: "POST",
+                url: "/Reservations/BookTable",
+                contentType: "application/json",
+                data: JSON.stringify(formData),
+                success: function (response) {
+                    $("#loadingSpinner").addClass("d-none");
+                    $("#submitText").text("Book Now");
+
+                    // Reset form
+                    $("#reservationForm")[0].reset();
+
+                    // Show success modal
+                    var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                },
+                error: function (xhr) {
+                    $("#loadingSpinner").addClass("d-none");
+                    $("#submitText").text("Book Now");
+
+                    var errorMessage = xhr.responseText || "Something went wrong!";
+                    $("#errorAlert").removeClass("d-none").text("❌ Error: " + errorMessage);
+                }
+            });
+        });
+    });
+
+</script>
+
+<style>
+    body {
+        background: url('/img/dining-background.jpg') no-repeat center center fixed;
+        background-size: cover;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .booking-container {
+        position: relative;
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .booking-form {
+        position: relative;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 100%;
+        animation: fadeIn 0.8s ease-in-out;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: 0.3s;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+        }
+
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+    }
+
+        .btn-lg:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+    
+</style>
