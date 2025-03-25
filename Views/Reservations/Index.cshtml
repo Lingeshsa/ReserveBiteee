@@ -29,7 +29,7 @@
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Date & Time</label>
-                <input type="datetime-local" id="ReservationDateTime" name="ReservationDateTime" class="form-control" required>
+                <input type="datetime-local" id="ReservationDateTime" name="ReservationDateTime" class="form-control" required min="">
             </div>
 
             <div class="mb-3">
@@ -42,6 +42,22 @@
                     <option value="5">5+ People</option>
                 </select>
             </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Select Category</label>
+                <select id="Categorie" name="Categorie" class="form-select" required>
+                    <option value="">Select Category</option>
+                    <option value="AC">AC</option>
+                    <option value="Non-AC">Non-AC</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Select Table</label>
+                <select id="TableSelection" name="TableSelection" class="form-select" required>
+                    <option value="">Select a Category First</option>
+                </select>
+            </div>  
+
 
             <div class="mb-4">
                 <label class="form-label fw-bold">Special Requests (Optional)</label>
@@ -58,7 +74,6 @@
     </div>
 </div>
 
-<!-- Success Modal -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -76,29 +91,72 @@
     </div>
 </div>
 
-<!-- AJAX Script -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-       $(document).ready(function () {
+        $(document).ready(function () {
+
+        var today = new Date().toISOString().slice(0, 16);
+        document.getElementById("ReservationDateTime").min = today;
+
+        function fetchTables() {
+        var selectedCategory = $("#Categorie").val();
+        var selectedTime = $("#ReservationDateTime").val();
+
+        $("#TableSelection").html('<option value="">Loading...</option>');
+
+        if (selectedCategory && selectedTime) {
+            $.ajax({
+                type: "GET",
+                url: "/Reservations/GetAvailableTables",
+                data: { categorie: selectedCategory, reservationDateTime: selectedTime },
+                success: function (response) {
+
+                    console.log(response);
+                               
+                    $("#TableSelection").empty();
+                    if (response.length > 0) {
+                        $("#TableSelection").append('<option value="">Select a Table</option>');
+                        response.forEach(function (table) {
+                            $("#TableSelection").append(`<option value="${table.tableId}">Table ${table.tableNumber}</option>`);
+                        });
+                    } else {
+                        $("#TableSelection").append('<option value="">No Tables Available</option>');
+                    }
+                },
+                error: function () {
+                    $("#TableSelection").html('<option value="">Error fetching tables</option>');
+                }
+            });
+        } else {
+            $("#TableSelection").html('<option value="">Select Category & Time First</option>');
+        }
+    }
+
+    $("#Categorie, #ReservationDateTime").change(fetchTables);
+
         $("#reservationForm").submit(function (event) {
             event.preventDefault();
 
-            // Show loading spinner
+            if ($("#TableSelection").val() === "") {
+                alert("❌ Please select an available table.");
+                return;
+            }
+
             $("#loadingSpinner").removeClass("d-none");
             $("#submitText").text("Processing...");
 
-            debugger
-                    var formData = {
-        FullName: $("#FullName").val(),
-        Email: $("#Email").val(),
-        Phone: $("#Phone").val(),
-        ReservationDateTime: new Date($("#ReservationDateTime").val()).toISOString(), // Convert to UTC
-        Guests: parseInt($("#Guests").val()),
-        Requests: $("#Requests").val()
-    };
-
-
+            var formData = {
+                FullName: $("#FullName").val(),
+                Email: $("#Email").val(),
+                Phone: $("#Phone").val(),
+                ReservationDateTime: new Date($("#ReservationDateTime").val()).toISOString(),
+                Guests: parseInt($("#Guests").val()),
+                Requests: $("#Requests").val(),
+                Categorie: $("#Categorie").val(),
+                TableId: $("#TableSelection").val()
+            };
 
             $.ajax({
                 type: "POST",
@@ -108,26 +166,23 @@
                 success: function (response) {
                     $("#loadingSpinner").addClass("d-none");
                     $("#submitText").text("Book Now");
-
-                    // Reset form
                     $("#reservationForm")[0].reset();
-
-                    // Show success modal
+                    $("#TableSelection").html('<option value="">Select Category & Time First</option>');
                     var successModal = new bootstrap.Modal(document.getElementById('successModal'));
                     successModal.show();
                 },
                 error: function (xhr) {
                     $("#loadingSpinner").addClass("d-none");
                     $("#submitText").text("Book Now");
-
-                    var errorMessage = xhr.responseText || "Something went wrong!";
-                    $("#errorAlert").removeClass("d-none").text("❌ Error: " + errorMessage);
+                    $("#errorAlert").removeClass("d-none").text("❌ Error: " + xhr.responseText);
                 }
             });
         });
     });
-
 </script>
+
+
+
 
 <style>
     body {

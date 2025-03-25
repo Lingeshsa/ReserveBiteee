@@ -10,5 +10,8 @@ namespace ReserveBiteee.Service
         List<ReservationModel> GetAllReservations();
 
         ReservationModel GetReservationById(int reservationId);
+
+        List<Tables> GetAvailableTables(string categorie, DateTime reservationDateTime);
+
     }
 }

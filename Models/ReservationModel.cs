@@ -11,13 +11,12 @@ namespace ReserveBiteee.Models
         public string Phone { get; set; }
         public DateTime ReservationDateTime { get; set; }
         public int Guests { get; set; }
-        public string? Requests { get; set; }
+        public string Requests { get; set; }
+        public string Status { get; set; }
+        public DateTime CreatedAt { get; set; }
         public string Categorie { get; set; }
-
-        public TableModelAC TableModelAc;
-
-        public TableModelNonAc TableModelNonAc;
-
-        public string Status { get; set; } = "Pending";
+        public int TableId { get; set; }
+        public Tables Table { get; set; }
+        public string TableNumber { get; internal set; }
     }
 }

@@ -12,6 +12,8 @@
             <th>Date & Time</th>
             <th>Guests</th>
             <th>Requests</th>
+            <th>Category</th> <!-- New Column -->
+            <th>Table</th> <!-- New Column -->
             <th>Status</th>
             <th>Action</th>
         </tr>
@@ -27,6 +29,8 @@
                 <td>@reservation.ReservationDateTime.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@reservation.Guests</td>
                 <td>@reservation.Requests</td>
+                <td>@reservation.Categorie</td> <!-- Display Category -->
+                <td>@reservation.TableNumber</td> <!-- Display Table Number -->
                 <td>
                     <select class="form-select status-select" data-id="@reservation.Id">
                         <option value="Pending" selected="@(reservation.Status == "Pending" ? "selected" : null)">Pending</option>
@@ -42,13 +46,11 @@
     </tbody>
 </table>
 
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
         $(".update-status-btn").click(function () {
-           
-            var reservationId = $(this).data("id");  
+            var reservationId = $(this).data("id");
             var newStatus = $(this).closest("tr").find(".status-select").val();
 
             $.ajax({
@@ -58,7 +60,7 @@
                 data: JSON.stringify({ Id: reservationId, Status: newStatus }),
                 success: function (response) {
                     alert("Status updated successfully!");
-                    location.reload(); 
+                    location.reload();
                 },
                 error: function (xhr) {
                     alert("Error updating status: " + xhr.responseText);
@@ -67,4 +69,3 @@
         });
     });
 </script>
-
