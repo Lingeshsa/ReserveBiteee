@@ -19,16 +19,17 @@ namespace ReserveBiteee.Service
             {
                 SqlParameter[] parameters =
                 {
-                    new SqlParameter("@FullName", model.FullName),
-                    new SqlParameter("@Email", model.Email),
-                    new SqlParameter("@Phone", model.Phone),
-                    new SqlParameter("@ReservationDateTime", model.ReservationDateTime),
-                    new SqlParameter("@Guests", model.Guests),
-                    new SqlParameter("@Requests", model.Requests ?? (object)DBNull.Value),
-                    new SqlParameter("@Status", model.Status)
-                };
+            new SqlParameter("@FullName", model.FullName),
+            new SqlParameter("@Email", model.Email),
+            new SqlParameter("@Phone", model.Phone),
+            new SqlParameter("@ReservationDateTime", model.ReservationDateTime),
+            new SqlParameter("@Guests", model.Guests),
+            new SqlParameter("@Requests", (object)model.Requests ?? DBNull.Value),
+            new SqlParameter("@Categorie", model.Categorie),
+            new SqlParameter("@TableId", model.TableId)
+        };
 
-                return _dbHelper.InsertUpdateDelete("sp_InsertReservation", parameters, CommandType.StoredProcedure);
+                return _dbHelper.InsertUpdateDelete("sp_AddReservation", parameters, CommandType.StoredProcedure);
             }
             catch (Exception ex)
             {
@@ -36,36 +37,82 @@ namespace ReserveBiteee.Service
                 throw;
             }
         }
+
         public List<ReservationModel> GetAllReservations()
         {
+            List<ReservationModel> reservations = new List<ReservationModel>();
+
             try
             {
                 DataTable result = _dbHelper.GetData("sp_GetAllReservations", null, CommandType.StoredProcedure);
-                List<ReservationModel> reservations = new List<ReservationModel>();
 
-                foreach (DataRow row in result.Rows)
+                if (result != null && result.Rows.Count > 0)
                 {
-                    reservations.Add(new ReservationModel
+                    foreach (DataRow row in result.Rows)
                     {
-                        Id = Convert.ToInt32(row["Id"]),
-                        FullName = row["FullName"].ToString(),
-                        Email = row["Email"].ToString(),
-                        Phone = row["Phone"].ToString(),
-                        ReservationDateTime = DateTime.SpecifyKind(Convert.ToDateTime(row["ReservationDateTime"]), DateTimeKind.Utc).ToLocalTime(),
-                        Guests = Convert.ToInt32(row["Guests"]),
-                        Requests = row.IsNull("Requests") ? null : row["Requests"].ToString(),
-                        Status = row["Status"].ToString()
-                    });
+                        reservations.Add(new ReservationModel
+                        {
+                            Id = row["Id"] != DBNull.Value ? Convert.ToInt32(row["Id"]) : 0,
+                            FullName = row["FullName"]?.ToString() ?? "N/A",
+                            Email = row["Email"]?.ToString() ?? "N/A",
+                            Phone = row["Phone"]?.ToString() ?? "N/A",
+                            ReservationDateTime = row["ReservationDateTime"] != DBNull.Value
+                                ? DateTime.SpecifyKind(Convert.ToDateTime(row["ReservationDateTime"]), DateTimeKind.Utc).ToLocalTime()
+                                : DateTime.MinValue,
+                            Guests = row["Guests"] != DBNull.Value ? Convert.ToInt32(row["Guests"]) : 1,
+                            Requests = row.IsNull("Requests") ? null : row["Requests"].ToString(),
+                            Status = row["Status"]?.ToString() ?? "Unknown",
+                            Categorie = row["Categorie"]?.ToString() ?? "Unspecified",  // Fetching Category
+                            TableNumber = row["TableNumber"]?.ToString() ?? "Unknown"  // Fetching Table Number
+                        });
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Failed to fetch reservations: {ex.Message}");
+                throw new Exception("An error occurred while fetching reservations. Please try again later.");
+            }
 
-                return reservations;
+            return reservations;
+        }
+
+
+        public List<Tables> GetAvailableTables(string categorie, DateTime reservationDateTime)
+        {
+            List<Tables> tables = new List<Tables>();
+
+            try
+            {
+                SqlParameter[] parameters =
+                {
+            new SqlParameter("@Categorie", categorie),
+            new SqlParameter("@RequestedDateTime", reservationDateTime)
+        };
+
+                DataTable dt = _dbHelper.GetData("sp_GetAvailableTables", parameters, CommandType.StoredProcedure);
+
+                if (dt != null)
+                {
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        tables.Add(new Tables
+                        {
+                            TableId = Convert.ToInt32(row["TableId"]),
+                            TableNumber = row["TableNumber"].ToString()
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"SQL Error: {ex.Message}");
-                throw;
             }
+
+            return tables;
         }
+
+
         public ReservationModel GetReservationById(int reservationId)
         {
             try
